@@ -53,9 +53,13 @@ exports.getCurrentCash = async (req, res) => {
 
     const register = existing[0];
 
-    // Get today's incomes from this register
+    // Get today's incomes from this register, separated by method
     const [haircuts] = await pool.query(
-      'SELECT SUM(price) as total_income FROM haircuts WHERE cash_register_id = ?',
+      `SELECT 
+        SUM(price) as total_income,
+        SUM(CASE WHEN metodo_pago = 'efectivo' THEN price ELSE 0 END) as total_efectivo,
+        SUM(CASE WHEN metodo_pago = 'transferencia' THEN price ELSE 0 END) as total_transferencia
+       FROM haircuts WHERE cash_register_id = ?`,
       [register.id]
     );
     
@@ -65,6 +69,8 @@ exports.getCurrentCash = async (req, res) => {
     );
 
     const totalIncome = Number(haircuts[0].total_income || 0);
+    const totalEfectivo = Number(haircuts[0].total_efectivo || 0);
+    const totalTransferencia = Number(haircuts[0].total_transferencia || 0);
     const totalExpense = Number(expenses[0].total_expense || 0);
     const balance = Number(register.initial_amount) + totalIncome - totalExpense;
 
@@ -73,6 +79,8 @@ exports.getCurrentCash = async (req, res) => {
       data: {
         ...register,
         total_income: totalIncome,
+        total_efectivo: totalEfectivo,
+        total_transferencia: totalTransferencia,
         total_expense: totalExpense,
         current_balance: balance
       }

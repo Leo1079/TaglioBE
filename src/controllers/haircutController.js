@@ -1,13 +1,14 @@
 const pool = require('../config/db');
 
-// POST /api/haircuts
+
 exports.createHaircut = async (req, res) => {
   try {
-    const { service_id } = req.body;
+    const { service_id, metodo_pago } = req.body;
     
     if (!service_id) {
       return res.status(400).json({ error: 'service_id is required' });
     }
+    const payMethod = metodo_pago || 'efectivo';
 
     // Check for open cash register
     const [register] = await pool.query('SELECT id FROM cash_registers WHERE status = "open"');
@@ -25,8 +26,8 @@ exports.createHaircut = async (req, res) => {
     const finalPrice = service[0].price;
 
     const [result] = await pool.query(
-      'INSERT INTO haircuts (service_id, cash_register_id, price, created_at) VALUES (?, ?, ?, NOW())',
-      [service_id, cash_register_id, finalPrice]
+      'INSERT INTO haircuts (service_id, cash_register_id, price, metodo_pago, created_at) VALUES (?, ?, ?, ?, NOW())',
+      [service_id, cash_register_id, finalPrice, payMethod]
     );
 
     res.status(201).json({ message: 'Haircut registered', id: result.insertId });
@@ -35,7 +36,7 @@ exports.createHaircut = async (req, res) => {
   }
 };
 
-// GET /api/haircuts
+
 exports.getHaircuts = async (req, res) => {
   try {
     const [haircuts] = await pool.query(`
