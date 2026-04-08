@@ -32,6 +32,8 @@ exports.closeCash = async (req, res) => {
 
     const cashRegisterId = existing[0].id;
     
+    console.log(cashRegisterId);
+    
     await pool.query(
       'UPDATE cash_registers SET status = "closed", closed_at = NOW() WHERE id = ?',
       [cashRegisterId]
