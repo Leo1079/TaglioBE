@@ -26,19 +26,21 @@ exports.openCash = async (req, res) => {
 exports.closeCash = async (req, res) => {
   try {
     const [existing] = await pool.query('SELECT * FROM cash_registers WHERE status = "open"');
+    
     if (existing.length === 0) {
       return res.status(400).json({ error: 'No open cash register found' });
     }
 
     const cashRegisterId = existing[0].id;
     
-    console.log(cashRegisterId);
     
-    await pool.query(
+   const [result] = await pool.query(
       'UPDATE cash_registers SET status = "closed", closed_at = NOW() WHERE id = ?',
       [cashRegisterId]
     );
 
+ 
+    
     res.json({ message: 'Cash register closed successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -49,6 +51,7 @@ exports.closeCash = async (req, res) => {
 exports.getCurrentCash = async (req, res) => {
   try {
     const [existing] = await pool.query('SELECT * FROM cash_registers WHERE status = "open"');
+    
     if (existing.length === 0) {
       return res.json({ status: 'closed', data: null });
     }
@@ -59,8 +62,8 @@ exports.getCurrentCash = async (req, res) => {
     const [haircuts] = await pool.query(
       `SELECT 
         SUM(price) as total_income,
-        SUM(CASE WHEN metodo_pago = 'efectivo' THEN price ELSE 0 END) as total_efectivo,
-        SUM(CASE WHEN metodo_pago = 'transferencia' THEN price ELSE 0 END) as total_transferencia
+        SUM(CASE WHEN payment_method = 'efectivo' THEN price ELSE 0 END) as total_efectivo,
+        SUM(CASE WHEN payment_method = 'transferencia' THEN price ELSE 0 END) as total_transferencia
        FROM haircuts WHERE cash_register_id = ?`,
       [register.id]
     );
